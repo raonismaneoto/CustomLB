@@ -24,8 +24,7 @@ func (a *Api) serveRequest(w http.ResponseWriter, r *http.Request) {
 
 	response, err := a.LB.ResolveRequest(req)
 	if err != nil {
-		log.Print("Got an error with code %s", response.StatusCode)
-		log.Print(response.Body)
+		log.Print("Got the following error: ", err.Error())
 	}
 
 	Write(w, response.StatusCode, response.Body)

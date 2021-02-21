@@ -1,6 +1,8 @@
 package lb
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -42,12 +44,22 @@ func (lb *LoadBalancer) AddNode(node *Node) {
 }
 
 func (lb *LoadBalancer) ResolveRequest(incomingReq *Request) (*HttpResponse, error) {
+	if len(lb.nodes) == 0 {
+		return nil, errors.New("No node available")
+	}
+
 	nodeEndpoint := lb.nodes[0].endpoint
 	return SendRequest(nodeEndpoint, incomingReq)
 }
 
 func (lb *LoadBalancer) RemoveNode(id string) {
-
+	for i, node := range lb.nodes {
+		if node.id == id {
+			lb.nodes = append(lb.nodes[:i], lb.nodes[i+1:]...)
+			fmt.Printf("Node %s removed", id)
+			return
+		}
+	}
 }
 
 func (lb *LoadBalancer) UpdateNode(id string) {
