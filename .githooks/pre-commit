@@ -1,0 +1,14 @@
+#!/bin/bash
+
+files_changed=$(git status)
+
+for file in $files_changed
+do
+	if [[ $file == *.go ]]
+	then
+		go fmt $file
+	fi
+done
+
+exit $?
+

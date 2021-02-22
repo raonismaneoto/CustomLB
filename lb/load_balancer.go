@@ -59,6 +59,7 @@ func (lb *LoadBalancer) RemoveNode(id string) {
 	}
 }
 
+
 func (lb *LoadBalancer) UpdateNode(id string, patch jsonpatch.Patch) error {
 	for _, node := range lb.nodes {
 		if node.id == id {
