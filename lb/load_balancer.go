@@ -1,9 +1,13 @@
 package lb
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	jsonpatch "github.com/evanphx/json-patch/v5"
+	"log"
 	"net/http"
+	"sort"
 	"time"
 )
 
@@ -33,14 +37,9 @@ func (lb *LoadBalancer) Start() {
  go lb.refreshNodes()
 }
 
-func (lb *LoadBalancer) AddNode(node *Node) {
-	for i, currNode := range lb.nodes {
-		if currNode.coef <= node.coef {
-			lb.nodes = append(lb.nodes[:i+1], lb.nodes[i:]...)
-			lb.nodes[i] = node
-			return
-		}
-	}
+func (lb *LoadBalancer) AddNode(id string, node *Node) {
+	node.id = id
+	lb.nodes = append(lb.nodes, node)
 }
 
 func (lb *LoadBalancer) ResolveRequest(incomingReq *Request) (*HttpResponse, error) {
@@ -62,16 +61,48 @@ func (lb *LoadBalancer) RemoveNode(id string) {
 	}
 }
 
-func (lb *LoadBalancer) UpdateNode(id string) {
+func (lb *LoadBalancer) UpdateNode(id string, patch jsonpatch.Patch) error {
+	for _, node := range lb.nodes {
+		if node.id == id {
+			parsedNode, err := json.Marshal(node)
+			if err != nil {
+				log.Printf("unable to parse node %s to byte slice. ", id, err.Error())
+			}
 
+			modifiedNode, err := patch.Apply(parsedNode)
+			if err != nil {
+				log.Printf("unable to apply patch. ", err.Error())
+			}
+
+			err = json.Unmarshal(modifiedNode, &node)
+			if err != nil {
+				log.Printf("unable to unmarshal modified node", err.Error())
+			}
+
+			return nil
+		}
+	}
+	return errors.New("node not found")
 }
 
 func (lb *LoadBalancer) refreshNodes() {
 	for {
+		for _, node := range lb.nodes {
+			node.coef = calculateCoef(node)
+		}
 
+		sort.Slice(lb.nodes, func(i, j int) bool {
+			return lb.nodes[i].coef >= lb.nodes[j].coef
+		})
+
+		time.Sleep(60 * time.Second)
 	}
 }
 
-func calculateCoef(node *Node) {
-
+func calculateCoef(node *Node) float32 {
+	if node.usedCpu == 0 || node.usedRam == 0 {
+		return 1
+	}
+	coef := (1/(node.usedCpu * node.usedRam))*0.1
+	return coef
 }

@@ -2,7 +2,9 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
+	jsonpatch "github.com/evanphx/json-patch/v5"
+	"github.com/gorilla/mux"
+	uuid "github.com/nu7hatch/gouuid"
 	"github.com/raonismaneoto/CustomLB/lb"
 	"io/ioutil"
 	"log"
@@ -10,15 +12,34 @@ import (
 )
 
 func (a *Api) join(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf(r.RequestURI)
-	Write(w, 200, "not implemented yet")
+	var (
+		node lb.Node
+	)
+
+	if err := json.NewDecoder(r.Body).Decode(&node); err != nil {
+		Write(w, http.StatusBadRequest, "invalid payload")
+		return
+	}
+
+	u, err := uuid.NewV4()
+	if err != nil {
+		Write(w, http.StatusInternalServerError, "unable to generate uuid")
+	}
+
+	a.LB.AddNode(u.String(), &node)
+
+	Write(w, 201, &map[string]string{"id": ""})
 }
 
 func (a *Api) serveRequest(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		Write(w, http.StatusBadRequest, "unable to parse body")
+	}
 	req := &lb.Request{
 		r.Method,
 		r.RequestURI,
-		ioutil.ReadAll(r.Body),
+		body,
 		r.Header,
 	}
 
@@ -31,7 +52,31 @@ func (a *Api) serveRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *Api) leave(w http.ResponseWriter, r *http.Request) {
-	Write(w, 200, "not implemented yet")
+	params := mux.Vars(r)
+	nodeId := params["id"]
+	a.LB.RemoveNode(nodeId)
+	Write(w, 200, "")
+}
+
+func (a *Api) update(w http.ResponseWriter, r *http.Request) {
+	var (
+		patch jsonpatch.Patch
+	)
+
+	if err := json.NewDecoder(r.Body).Decode(&patch); err != nil {
+		Write(w, http.StatusBadRequest, "invalid payload")
+		return
+	}
+
+	params := mux.Vars(r)
+	nodeId := params["id"]
+
+	err := a.LB.UpdateNode(nodeId, patch)
+	if err != nil {
+		Write(w, http.StatusNotFound, "node not found")
+	}
+
+	Write(w, 200, "")
 }
 
 func Write(w http.ResponseWriter, statusCode int, i interface{}) {
