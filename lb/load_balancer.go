@@ -12,19 +12,19 @@ import (
 )
 
 type Node struct {
-	id string
-	endpoint string
-	usedCpu float32 // varies from 0 to 1
-	usedRam float32 // varies from 0 to 1
-	coef float32 // coefficient calculated based on the node resources. Varies from 0, when the node is unable to receive any request, to 1, when the node is completely free
+	id            string
+	endpoint      string
+	usedCpu       float32 // varies from 0 to 1
+	usedRam       float32 // varies from 0 to 1
+	coef          float32 // coefficient calculated based on the node resources. Varies from 0, when the node is unable to receive any request, to 1, when the node is completely free
 	lastUpdatedAt time.Time
 }
 
 type Request struct {
-	Method string
+	Method       string
 	ResourcePath string
-	Body interface{}
-	Headers http.Header
+	Body         interface{}
+	Headers      http.Header
 }
 
 type LoadBalancer struct {
@@ -32,7 +32,7 @@ type LoadBalancer struct {
 }
 
 func (lb *LoadBalancer) Start() {
- go lb.refreshNodes()
+	go lb.refreshNodes()
 }
 
 func (lb *LoadBalancer) AddNode(id string, node *Node) {
@@ -88,7 +88,7 @@ func (lb *LoadBalancer) UpdateNode(id string, patch jsonpatch.Patch) error {
 func (lb *LoadBalancer) refreshNodes() {
 	for {
 		for _, node := range lb.nodes {
-			if node.lastUpdatedAt.Unix() + 5 < time.Now().Unix() {
+			if node.lastUpdatedAt.Unix()+5 < time.Now().Unix() {
 				node = getRefreshedNode(node)
 			}
 			node.coef = calculateCoef(node)
@@ -106,11 +106,11 @@ func calculateCoef(node *Node) float32 {
 	if node.usedCpu == 0 || node.usedRam == 0 {
 		return 1
 	}
-	coef := (1/(node.usedCpu * node.usedRam))*0.1
+	coef := (1 / (node.usedCpu * node.usedRam)) * 0.1
 	return coef
 }
 
-func getRefreshedNode(node *Node) *Node{
+func getRefreshedNode(node *Node) *Node {
 	newNode := Node{
 		node.id,
 		node.endpoint,
@@ -138,10 +138,10 @@ func getRefreshedNode(node *Node) *Node{
 	}
 
 	//update node's info
-	if val,ok := resourcesStats["usedRam"]; ok {
+	if val, ok := resourcesStats["usedRam"]; ok {
 		newNode.usedRam = val
 	}
-	if val,ok := resourcesStats["usedCpu"]; ok {
+	if val, ok := resourcesStats["usedCpu"]; ok {
 		newNode.usedCpu = val
 	}
 

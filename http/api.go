@@ -1,15 +1,15 @@
 package http
 
 import (
+	"github.com/gorilla/mux"
 	"github.com/raonismaneoto/CustomLB/lb"
 	"log"
 	"net/http"
-	"github.com/gorilla/mux"
 )
 
 type Api struct {
 	server *http.Server
-	LB *lb.LoadBalancer
+	LB     *lb.LoadBalancer
 }
 
 func New() *Api {
@@ -17,7 +17,7 @@ func New() *Api {
 }
 
 func (a *Api) Start(port string) error {
-	a.server= &http.Server{
+	a.server = &http.Server{
 		Addr:    ":" + port,
 		Handler: a.handlers(),
 	}

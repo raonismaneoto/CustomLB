@@ -18,7 +18,7 @@ type HttpResponse struct {
 }
 
 var (
-	Client       HTTPClient                                        = &http.Client{}
+	Client HTTPClient = &http.Client{}
 )
 
 func SendRequest(endpoint string, incomingReq *Request) (*HttpResponse, error) {
@@ -31,7 +31,7 @@ func SendRequest(endpoint string, incomingReq *Request) (*HttpResponse, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(incomingReq.Method, endpoint + incomingReq.ResourcePath, bytes.NewBuffer(parsedBody))
+	req, err := http.NewRequest(incomingReq.Method, endpoint+incomingReq.ResourcePath, bytes.NewBuffer(parsedBody))
 	if err != nil {
 		return nil, err
 	}
