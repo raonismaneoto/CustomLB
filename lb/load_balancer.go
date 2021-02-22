@@ -14,12 +14,10 @@ import (
 type Node struct {
 	id string
 	endpoint string
-	totalCpu float32 // in mb
 	usedCpu float32 // varies from 0 to 1
-	totalRam float32 // in mb
 	usedRam float32 // varies from 0 to 1
 	coef float32 // coefficient calculated based on the node resources. Varies from 0, when the node is unable to receive any request, to 1, when the node is completely free
-	lastUpdatedAt *time.Time
+	lastUpdatedAt time.Time
 }
 
 type Request struct {
@@ -79,6 +77,8 @@ func (lb *LoadBalancer) UpdateNode(id string, patch jsonpatch.Patch) error {
 				log.Printf("unable to unmarshal modified node", err.Error())
 			}
 
+			node.lastUpdatedAt = time.Now()
+
 			return nil
 		}
 	}
@@ -88,6 +88,9 @@ func (lb *LoadBalancer) UpdateNode(id string, patch jsonpatch.Patch) error {
 func (lb *LoadBalancer) refreshNodes() {
 	for {
 		for _, node := range lb.nodes {
+			if node.lastUpdatedAt.Unix() + 5 < time.Now().Unix() {
+				node = getRefreshedNode(node)
+			}
 			node.coef = calculateCoef(node)
 		}
 
@@ -105,4 +108,44 @@ func calculateCoef(node *Node) float32 {
 	}
 	coef := (1/(node.usedCpu * node.usedRam))*0.1
 	return coef
+}
+
+func getRefreshedNode(node *Node) *Node{
+	newNode := Node{
+		node.id,
+		node.endpoint,
+		node.usedCpu,
+		node.usedRam,
+		node.coef,
+		node.lastUpdatedAt,
+	}
+
+	req := &Request{
+		http.MethodGet,
+		"/api/resources",
+		nil,
+		nil,
+	}
+	response, err := SendRequest(node.endpoint, req)
+	if err != nil {
+		log.Printf("unable to fetch resource data from resource %s", node.id)
+	}
+
+	var resourcesStats map[string]float32
+	err = json.Unmarshal(response.Body, &resourcesStats)
+	if err != nil {
+		log.Fatalf("unable to parse resourcesStats from node %s", node.id)
+	}
+
+	//update node's info
+	if val,ok := resourcesStats["usedRam"]; ok {
+		newNode.usedRam = val
+	}
+	if val,ok := resourcesStats["usedCpu"]; ok {
+		newNode.usedCpu = val
+	}
+
+	newNode.lastUpdatedAt = time.Now()
+
+	return &newNode
 }

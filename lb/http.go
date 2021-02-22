@@ -22,6 +22,10 @@ var (
 )
 
 func SendRequest(endpoint string, incomingReq *Request) (*HttpResponse, error) {
+	if incomingReq.Body == nil {
+		incomingReq.Body = &map[string]string{}
+	}
+
 	parsedBody, err := json.Marshal(incomingReq.Body)
 	if err != nil {
 		return nil, err
