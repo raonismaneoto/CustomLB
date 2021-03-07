@@ -12,16 +12,8 @@ import (
 
 const (
 	NodeEndpoint = "localhost:8081"
-	LBEndpoint = "localhost:8080"
+	LBEndpoint   = "localhost:8080"
 )
-
-func main() {
-	api := Api{
-		server: nil,
-		worker: Worker{},
-	}
-	api.Start("8081")
-}
 
 type Worker struct {
 	id            string
@@ -47,8 +39,8 @@ func (w *Worker) Join() {
 	json.Unmarshal(payload, &reqBody)
 
 	req := &Request{
-		Body:    	&reqBody,
-		Endpoint: LBEndpoint+"/api/lb/nodes",
+		Body:     &reqBody,
+		Endpoint: LBEndpoint + "/api/lb/nodes",
 		Method:   "POST",
 		Headers:  nil,
 	}
@@ -85,8 +77,8 @@ func (w *Worker) Update() {
 		patch, err := jsonpatch.CreateMergePatch(oldWorker, currWorker)
 
 		req := &Request{
-			Body:    	&patch,
-			Endpoint: LBEndpoint+"/api/lb/nodes/" + w.id,
+			Body:     &patch,
+			Endpoint: LBEndpoint + "/api/lb/nodes/" + w.id,
 			Method:   "PATCH",
 			Headers:  nil,
 		}

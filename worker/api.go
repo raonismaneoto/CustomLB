@@ -13,7 +13,7 @@ type Api struct {
 }
 
 func (a *Api) Start(port string) error {
-	a.server= &http.Server{
+	a.server = &http.Server{
 		Addr:    ":" + port,
 		Handler: a.handlers(),
 	}
@@ -46,4 +46,3 @@ func Write(w http.ResponseWriter, statusCode int, i interface{}) {
 		log.Println("Error :" + err.Error())
 	}
 }
-

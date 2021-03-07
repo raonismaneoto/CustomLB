@@ -22,10 +22,10 @@ var (
 )
 
 type Request struct {
-	Body interface{}
+	Body     interface{}
 	Endpoint string
-	Method string
-	Headers http.Header
+	Method   string
+	Headers  http.Header
 }
 
 func SendRequest(req *Request) (*HttpResponse, error) {
@@ -60,4 +60,3 @@ func SendRequest(req *Request) (*HttpResponse, error) {
 
 	return &HttpResponse{Body: respBody, Headers: resp.Header, StatusCode: resp.StatusCode}, nil
 }
-
