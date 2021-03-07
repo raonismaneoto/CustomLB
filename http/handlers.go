@@ -28,7 +28,7 @@ func (a *Api) join(w http.ResponseWriter, r *http.Request) {
 
 	a.LB.AddNode(u.String(), &node)
 
-	Write(w, 201, &map[string]string{"id": ""})
+	Write(w, 201, &map[string]string{"id": u.String()})
 }
 
 func (a *Api) serveRequest(w http.ResponseWriter, r *http.Request) {
